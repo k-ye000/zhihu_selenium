@@ -1,5 +1,6 @@
-from PIL import Image
+from os import waitpid
 import numpy as np
+from PIL import Image
 
 
 class Get_Slide_IMG_Position(object):
@@ -10,7 +11,7 @@ class Get_Slide_IMG_Position(object):
         self.fullbg_img_path = fullbg_img_path
 
     # 比较两张图片的像素点，获得坐标缺口
-    def defference_between_bg_fullbg(self):
+    def difference_between_bg_fullbg(self):
 
         # 两张图同时存在则进行处理
         if self.bg_img_path and self.fullbg_img_path:
@@ -52,21 +53,62 @@ class Get_Slide_IMG_Position(object):
 
     # 如果没有获取到bg_img_path/fullbg_img_path则单独处理slide_img_path
     def single_img_position(self):
-        # 功能待完成
-        # image_file = Image.open("./20210720184120.png") # open colour image
-        # # 改变图片灰度
-        # image_file = image_file.convert('L') # convert image to black and white
-        # image_file.save('result.png')
-        # 检测同一张图片上的直线缺口位置
+        '''
+        思路：
+            1.图片灰度化处理后验证码缺口与图片背景会有一个明显边界
+                ---》设置边界长度
+            2.将图片按照列切割，每列遍历像素点灰度值
+                ----》设置灰度区间
+            3.同时满足灰度区间+边界值可能就是目标，返回横坐标
+        '''
         if self.slide_img_path:
-            pass
+            bg_img_path = self.slide_img_path
+
+            # 读入图片
+            bg = Image.open(bg_img_path)
+            # 反转像素点保存图片
+            bg = bg.convert('L')
+
+            # 保存图片
+            bg.save('./static/new_name.png')
+
+            bg_pixel_array = np.asarray(bg)
+            # print(bg_pixel_array)
+
+            # 图片尺寸
+            size = bg_pixel_array.shape
+            width = size[1]
+
+            slide_size = 30  # slide_size值过大或过小都有影响
+
+            # 设置灰度值范围
+            l = [i for i in range(20, 50)]
+
+            # 遍历拆分出每一列
+            '''
+            考虑特殊情况：
+                1.缺口紧挨滑块;
+                2.缺口右侧边缘紧挨背景边缘;
+                取值范围可以缩小，不需要全图遍历，
+                去掉两侧的极值，即滑块宽度，同时也能排除使用网页截图时最左侧滑块的干扰
+            '''
+            for w in range(40,width-40):
+                store_arr = []
+                pix_list = bg_pixel_array[:, w]
+                # 遍历一列中每个像素点的灰度值
+                for index in range(1, len(pix_list)-1):
+                    # 判断每个像素点灰度值范围，且相邻两个灰度值都要在范围内
+                    if pix_list[index-1] in l and pix_list[index] in l and pix_list[index+1] in l:
+                        # 这里的index为满足灰度范围的像素点的纵坐标
+                        store_arr.append(index)
+                        # print(pix_list[index])
+                if store_arr:
+                    # 每遍历一列就用store_arr中纵坐标最大值与最小值之差与slide_size比较
+                    if max(store_arr)-min(store_arr) >= slide_size:
+                        # 灰度区间与边界值都满足有可能就是目标，返回此时的横坐标
+                        return w
+            # 全部遍历没有结果
+            return None
+
         else:
             raise ValueError('缺少slide_img_path参数')
-
-
-# slide = Get_Slide_IMG_Position()
-# slide.bg_img_path = './static/bg.png'
-# slide.fullbg_img_path = './static/fullbg.png'
-# # 获取滑动距离
-# position = slide.defference_between_bg_fullbg()
-# print(position)
