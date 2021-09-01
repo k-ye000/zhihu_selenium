@@ -51,7 +51,7 @@ class ZhihuSelenium(object):
         # 清除浏览器保存的数据
         element.clear()
         # 输入账号
-        element.send_keys('18696283034')
+        element.send_keys('zhanghao')
 
         # 定位密码框
         sleep(0.5)
@@ -60,7 +60,7 @@ class ZhihuSelenium(object):
         # 清除浏览器保存的数据
         element.clear()
         # 输入密码
-        element.send_keys('ck123456')
+        element.send_keys('mima')
 
         sleep(0.2)
         # 点击登录按钮
